@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildLegacyJson, buildSessionLog, FIXTURE_SESSION_IDS } from '../src/core/fixture';
-import { previewFile } from '../src/core/preview';
+import { formatDate, previewFile } from '../src/core/preview';
 import { readSessionFile, replayLog, SessionLogError } from '../src/core/sessionLog';
 import { tmpDir } from './helpers';
 
@@ -73,6 +73,13 @@ describe('session log replay (AC-3)', () => {
     expect(r.format).toBe('json');
     expect(r.state.requests).toHaveLength(3);
     expect(previewFile(file)).toMatchObject({ title: 'Fix login bug', turns: 3, format: 'json' });
+  });
+
+  it('shows dates as the UTC day, whatever the time zone of the machine', () => {
+    // 23:30 in UTC-5 is already the next day in UTC
+    expect(formatDate(Date.parse('2026-10-01T23:30:00-05:00'))).toBe('2026-10-02');
+    expect(formatDate(Date.parse('2026-10-01T00:30:00+09:00'))).toBe('2026-09-30');
+    expect(formatDate(undefined)).toBe('-');
   });
 
   it('previewFile reports damaged files instead of throwing', () => {

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import fs from 'node:fs';
 
 export interface FolderStat {
   /** `fs.Stats.birthtimeMs` */
@@ -24,6 +25,24 @@ export function folderSalt(platform: NodeJS.Platform, stat: FolderStat): string 
 /** Workspace storage id of a local folder: md5(fsPath + salt). */
 export function computeFolderId(fsPath: string, platform: NodeJS.Platform, stat: FolderStat): string {
   return createHash('md5').update(fsPath).update(folderSalt(platform, stat)).digest('hex');
+}
+
+/** What the id of a local folder depends on besides its path. Tests pass fixed values. */
+export interface IdInputs {
+  /** Defaults to `process.platform`. */
+  platform?: NodeJS.Platform;
+  /** Defaults to the real `fs.statSync`. */
+  stat?: (fsPath: string) => FolderStat;
+}
+
+/**
+ * Id of a folder on this machine. Only the defaults touch the real system;
+ * every caller in tests injects `platform` and `stat`.
+ */
+export function localFolderId(fsPath: string, inputs: IdInputs = {}): string {
+  const platform = inputs.platform ?? process.platform;
+  const stat = inputs.stat ?? ((p: string): FolderStat => fs.statSync(p));
+  return computeFolderId(fsPath, platform, stat(fsPath));
 }
 
 /** Remote folders (vscode-remote://...) hash the URI string only. */

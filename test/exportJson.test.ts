@@ -8,7 +8,7 @@ import { scanStorage } from '../src/core/scan';
 import { run } from '../src/cli/index';
 import { makeFixture, tmpDir } from './helpers';
 
-describe('export JSON for the official import command (AC-7)', () => {
+describe('export JSON for the official import command (AC-3)', () => {
   it('has a requests array and a responderUsername string, one request per replayed turn', () => {
     const { state } = replayLog(buildSessionLog({ id: FIXTURE_SESSION_IDS.loginBug, title: 'T', turns: 3 }).text);
     const exported = toExportJson(state);

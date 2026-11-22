@@ -14,7 +14,7 @@ async function cli(args: string[], env: Record<string, string | undefined> = {})
   return { code, out: out.join('\n'), err: err.join('\n') };
 }
 
-describe('two languages (AC-9)', () => {
+describe('two languages (AC-8)', () => {
   it('en and ko define exactly the same message keys', () => {
     expect(Object.keys(ko).sort()).toEqual(Object.keys(en).sort());
     for (const [key, text] of Object.entries(ko)) {
@@ -53,13 +53,19 @@ describe('two languages (AC-9)', () => {
   });
 
   it('priority is --lang > CHAT_RELINK_LANG > LC_ALL > LC_MESSAGES > LANG, not Korean means English', () => {
-    expect(resolveLang({ flag: 'en', env: { CHAT_RELINK_LANG: 'ko', LANG: 'ko_KR.UTF-8' } })).toBe('en');
+    // only the injected argv and env objects are read, never the real process.env
+    expect(resolveLang({ argv: ['scan', '--lang', 'en'], env: { CHAT_RELINK_LANG: 'ko', LANG: 'ko_KR.UTF-8' } })).toBe('en');
+    expect(resolveLang({ argv: ['--lang=ko'], env: { CHAT_RELINK_LANG: 'en', LANG: 'en_US' } })).toBe('ko');
+    expect(resolveLang({ argv: ['--lang', 'fr'], env: { LANG: 'ko_KR' } })).toBe('ko'); // invalid flag falls through
+    expect(resolveLang({ argv: ['--lang', 'ko', '--lang', 'en'], env: {} })).toBe('en'); // last one wins
     expect(resolveLang({ env: { CHAT_RELINK_LANG: 'ko', LC_ALL: 'en_US.UTF-8' } })).toBe('ko');
     expect(resolveLang({ env: { LC_ALL: 'ko_KR.UTF-8', LC_MESSAGES: 'en_US', LANG: 'en_US' } })).toBe('ko');
     expect(resolveLang({ env: { LC_MESSAGES: 'ko_KR', LANG: 'en_US' } })).toBe('ko');
     expect(resolveLang({ env: { LANG: 'ko_KR.UTF-8' } })).toBe('ko');
     expect(resolveLang({ env: { LANG: 'de_DE.UTF-8' } })).toBe('en');
     expect(resolveLang({ env: {} })).toBe('en');
+    expect(resolveLang({ argv: [], env: { LC_ALL: '', LC_MESSAGES: '', LANG: '' } })).toBe('en'); // empty means unset
+    expect(resolveLang({ env: { LANG: 'C' } })).toBe('en');
     expect(resolveLang({ env: { CHAT_RELINK_LANG: 'fr', LANG: 'ko_KR' } })).toBe('ko'); // invalid value ignored
     expect(langFromLocale('KO-kr')).toBe('ko');
   });

@@ -31,7 +31,7 @@ function message(fn: () => unknown): string {
   throw new Error('expected an error');
 }
 
-describe('core errors and warnings follow the chosen language (AC-9)', () => {
+describe('core errors and warnings follow the chosen language (AC-8)', () => {
   it('defaults to English for library users', () => {
     const { from } = setup();
     expect(message(() => planRelink({ from, to: from }))).toBe('Source and target are the same slot.');

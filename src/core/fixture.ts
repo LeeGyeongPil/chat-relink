@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { computeFolderId, computeRemoteId } from './workspaceId';
+import { computeFolderId, computeRemoteId, type FolderStat } from './workspaceId';
 import { createStateDb, type ChatIndex } from './stateDb';
 
 export const FIXTURE_SESSION_IDS = {
@@ -79,8 +79,25 @@ export interface FixtureOptions {
   includeScratch?: boolean;
   /** Add a remote slot and a multi-root slot (skipped by the scanner). */
   includeSkipped?: boolean;
+  /** Id rule to use (defaults to the host's `process.platform`). */
   platform?: NodeJS.Platform;
+  /**
+   * Birthtime/inode of a fixture project folder. Defaults to fixed fake values
+   * (FIXTURE_STATS), so the ids never depend on the real file system.
+   */
+  stat?: (project: FixtureProject, fsPath: string) => FolderStat;
 }
+
+export type FixtureProject = 'shop-api' | 'scratch';
+
+/**
+ * Fake birthtime/inode per project. A rename keeps both (same folder, new name),
+ * which is exactly why only the path part of the id changes.
+ */
+export const FIXTURE_STATS: Record<FixtureProject, FolderStat> = {
+  'shop-api': { birthtimeMs: Date.parse('2026-09-01T08:00:00.000Z'), ino: 424242 },
+  scratch: { birthtimeMs: Date.parse('2026-09-15T08:00:00.000Z'), ino: 515151 },
+};
 
 export interface Fixture {
   root: string;
@@ -118,14 +135,16 @@ export function buildFixture(opts: FixtureOptions): Fixture {
   fs.mkdirSync(storageDir, { recursive: true });
   fs.mkdirSync(projects, { recursive: true });
 
-  const idFor = (p: string): string => computeFolderId(p, platform, fs.statSync(p));
+  // id = md5(path + salt from the injected stat): no real birthtime or inode is read
+  const statOf = opts.stat ?? ((project: FixtureProject): FolderStat => FIXTURE_STATS[project]);
+  const idFor = (project: FixtureProject, p: string): string => computeFolderId(p, platform, statOf(project, p));
 
   // The project as it was before the rename.
   const oldFolder = path.join(projects, 'shop-api');
   fs.mkdirSync(path.join(oldFolder, 'src'), { recursive: true });
   fs.writeFileSync(path.join(oldFolder, 'src', 'login.ts'), 'export const login = 1;\n');
   fs.writeFileSync(path.join(oldFolder, 'src', 'cart.ts'), 'export const cart = 2;\n');
-  const oldId = idFor(oldFolder);
+  const oldId = idFor('shop-api', oldFolder);
 
   const specs: LogSpec[] = [
     { id: FIXTURE_SESSION_IDS.loginBug, title: 'Fix login bug', turns: 3, mention: `${oldFolder}/src/login.ts` },
@@ -147,7 +166,7 @@ export function buildFixture(opts: FixtureOptions): Fixture {
   if (opts.includeScratch) {
     const scratch = path.join(projects, 'scratch');
     fs.mkdirSync(scratch);
-    scratchId = idFor(scratch);
+    scratchId = idFor('scratch', scratch);
     const spec: LogSpec = { id: FIXTURE_SESSION_IDS.throwaway, title: 'Throwaway experiment', turns: 1 };
     const dir = path.join(storageDir, scratchId);
     writeSlot(dir, pathToFileURL(scratch).href, 'folder');
@@ -170,7 +189,7 @@ export function buildFixture(opts: FixtureOptions): Fixture {
   // Rename: the path changes, so VS Code opens a brand-new, empty slot.
   const currentFolder = path.join(projects, 'shop-api-v2');
   fs.renameSync(oldFolder, currentFolder);
-  const currentId = idFor(currentFolder);
+  const currentId = idFor('shop-api', currentFolder);
   const curDir = path.join(storageDir, currentId);
   writeSlot(curDir, pathToFileURL(currentFolder).href, 'folder');
   createStateDb(path.join(curDir, 'state.vscdb'), { version: 1, entries: {} }, { 'workbench.unrelated': '"keep me"' });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeFolderId, computeRemoteId, folderSalt } from '../src/core/workspaceId';
+import { computeFolderId, computeRemoteId, folderSalt, localFolderId } from '../src/core/workspaceId';
 
 const stat = { birthtimeMs: 1700000000000.7, ino: 12345 };
 
@@ -38,6 +38,20 @@ describe('workspace id rules (AC-1)', () => {
     expect(folderSalt('win32', stat)).toBe('1700000000000');
     expect(folderSalt('linux', stat)).toBe('12345');
     expect(folderSalt('linux', { birthtimeMs: 5, ino: 0 })).toBe('');
+  });
+
+  it('localFolderId uses the injected platform and stat, not the real file system', () => {
+    const asked: string[] = [];
+    const fakeStat = (p: string) => {
+      asked.push(p);
+      return { birthtimeMs: 1700000000000, ino: 12345 };
+    };
+    // the folders do not exist: a real stat would throw
+    expect(localFolderId('/home/u/shop-api', { platform: 'darwin', stat: fakeStat })).toBe('6cdee044491f56194e3f6e33fc036bd1');
+    expect(localFolderId('/home/u/shop-api', { platform: 'linux', stat: fakeStat })).toBe('78b58bdae3a400a3eaff46027b1e0b88');
+    // rename: same stat (same folder), new path -> new id
+    expect(localFolderId('/home/u/shop-api-v2', { platform: 'darwin', stat: fakeStat })).toBe('15043dade54d230913204b386465d279');
+    expect(asked).toEqual(['/home/u/shop-api', '/home/u/shop-api', '/home/u/shop-api-v2']);
   });
 
   it('remote folders hash the URI string only', () => {

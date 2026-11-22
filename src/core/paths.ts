@@ -18,25 +18,26 @@ export function isProduct(value: string): value is Product {
 
 export interface PathEnv {
   platform: NodeJS.Platform;
-  home: string;
+  /** Home folder (`os.homedir()` by default). */
+  homedir: string;
   env: Record<string, string | undefined>;
 }
 
 export function currentPathEnv(): PathEnv {
-  return { platform: process.platform, home: os.homedir(), env: process.env };
+  return { platform: process.platform, homedir: os.homedir(), env: process.env };
 }
 
 /** Default user data folder of a product (the folder that contains `User/` and `code.lock`). */
 export function defaultUserDataDir(product: Product, pe: PathEnv = currentPathEnv()): string {
   const name = PRODUCT_DIR[product];
   if (pe.platform === 'darwin') {
-    return path.posix.join(pe.home, 'Library', 'Application Support', name);
+    return path.posix.join(pe.homedir, 'Library', 'Application Support', name);
   }
   if (pe.platform === 'win32') {
-    const appData = pe.env.APPDATA ?? path.win32.join(pe.home, 'AppData', 'Roaming');
+    const appData = pe.env.APPDATA ?? path.win32.join(pe.homedir, 'AppData', 'Roaming');
     return path.win32.join(appData, name);
   }
-  const xdg = pe.env.XDG_CONFIG_HOME ?? path.posix.join(pe.home, '.config');
+  const xdg = pe.env.XDG_CONFIG_HOME ?? path.posix.join(pe.homedir, '.config');
   return path.posix.join(xdg, name);
 }
 
@@ -85,5 +86,6 @@ export function userDataFromGlobalStorageUri(globalFsPath: string): string | und
 export function toolHomeDir(pe: PathEnv = currentPathEnv()): string {
   const override = pe.env.CHAT_RELINK_HOME;
   if (override) return path.resolve(override);
-  return path.join(pe.home, '.chat-relink');
+  // join with the separator of the injected platform, not the host's
+  return (pe.platform === 'win32' ? path.win32 : path.posix).join(pe.homedir, '.chat-relink');
 }

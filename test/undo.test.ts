@@ -5,6 +5,7 @@ import { applyRelink, EXIT, hashTree, planRelink, readJournal, undoRelink, Verif
 import { findSlotByPath, scanStorage } from '../src/core/scan';
 import { openDb, readIndex, writeIndex } from '../src/core/stateDb';
 import { writeLock } from '../src/core/fixture';
+import { checkRunning } from '../src/core/runningGuard';
 import { makeFixture } from './helpers';
 
 function setup() {
@@ -55,9 +56,10 @@ describe('undo and automatic rollback (AC-6)', () => {
   it('undo is refused while VS Code is running', () => {
     const { fx, from, to } = setup();
     const result = applyRelink(planRelink({ from, to }), { userDataDir: fx.userDataDir, toolHome: fx.toolHome });
-    writeLock(fx.userDataDir, process.pid);
+    writeLock(fx.userDataDir, 4242);
     try {
-      undoRelink(result.journal);
+      // the lock file is real, the liveness answer is injected (no real PID is probed)
+      undoRelink(result.journal, { checkRunning: (dir) => checkRunning(dir, { isAlive: (pid) => pid === 4242 }) });
       expect.unreachable();
     } catch (e) {
       expect((e as { code: number }).code).toBe(EXIT.running);

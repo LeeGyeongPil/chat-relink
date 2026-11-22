@@ -1,17 +1,19 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { run } from '../src/cli/index';
+import { run, type RunDeps } from '../src/cli/index';
 import { runDemo } from '../src/cli/demo';
-import { writeLock } from '../src/core/fixture';
 import { hashTree } from '../src/core/relink';
 import { defaultUserDataDir, resolveUserDataDir, userDataFromStorageUri } from '../src/core/paths';
 import { makeFixture } from './helpers';
 
-async function cli(args: string[], env: Record<string, string | undefined>) {
+/** Pretends VS Code is running for the demo's guard step, without probing a real PID. */
+const demoGuard = { isAlive: () => true };
+
+async function cli(args: string[], env: Record<string, string | undefined>, deps: RunDeps = { guard: demoGuard }) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await run(args, { out: (s) => out.push(s), err: (s) => err.push(s) }, env);
+  const code = await run(args, { out: (s) => out.push(s), err: (s) => err.push(s) }, env, deps);
   return { code, out: out.join('\n'), err: err.join('\n') };
 }
 
@@ -38,29 +40,17 @@ describe('CLI commands and exit codes', () => {
     expect(undone.out).toContain('Confirmed');
   });
 
-  it('relink --apply exits with 3 and the "VS Code is running" message while a live PID holds the lock', async () => {
+  it('undo is refused with exit 3 while VS Code is running (lock and liveness injected)', async () => {
     const fx = makeFixture();
-    writeLock(fx.userDataDir, process.pid);
+    const env = { CHAT_RELINK_HOME: fx.toolHome, CHAT_RELINK_LANG: 'en' };
+    const applied = await cli(['relink', '--from', 'shop-api', '--to', fx.currentFolder, '--apply', '--user-data-dir', fx.userDataDir], env);
+    const journal = /Journal:\s+(.+)/.exec(applied.out)![1]!;
     const before = hashTree(fx.root);
-    const r = await cli(
-      ['relink', '--from', fx.oldId.slice(0, 8), '--to', fx.currentFolder, '--apply', '--user-data-dir', fx.userDataDir],
-      { CHAT_RELINK_HOME: fx.toolHome, CHAT_RELINK_LANG: 'en' },
-    );
+    const running = { readLock: () => '4242', isAlive: () => true };
+    const r = await cli(['undo', journal], env, { guard: running });
     expect(r.code).toBe(3);
-    expect(r.err).toMatch(/VS Code is running/);
+    expect(r.err).toMatch(/VS Code is running \(PID 4242\)/);
     expect(hashTree(fx.root)).toBe(before);
-  });
-
-  it('prints the running-VS-Code error in Korean with --lang ko', async () => {
-    const fx = makeFixture();
-    writeLock(fx.userDataDir, process.pid);
-    const r = await cli(
-      ['relink', '--from', fx.oldId.slice(0, 8), '--to', fx.currentFolder, '--apply', '--user-data-dir', fx.userDataDir, '--lang', 'ko'],
-      { CHAT_RELINK_HOME: fx.toolHome },
-    );
-    expect(r.code).toBe(3);
-    expect(r.err).toContain('VS Code 가 실행 중입니다');
-    expect(r.err).not.toMatch(/is running/);
   });
 
   it('finds the target slot when --to is a symlink to the folder (macOS /tmp vs /private/tmp)', async () => {
@@ -125,7 +115,7 @@ describe('CLI commands and exit codes', () => {
 describe('demo (AC-10)', () => {
   it('prints the whole story on a synthetic fixture and cleans up after itself', () => {
     const lines: string[] = [];
-    const summary = runDemo({ out: (l) => lines.push(l) }, 'en');
+    const summary = runDemo({ out: (l) => lines.push(l) }, 'en', { guard: demoGuard });
     const text = lines.join('\n');
     for (const expected of [
       'orphans: 1',
@@ -144,7 +134,7 @@ describe('demo (AC-10)', () => {
 
   it('is localized but keeps the machine-checkable result lines', () => {
     const lines: string[] = [];
-    runDemo({ out: (l) => lines.push(l) }, 'ko');
+    runDemo({ out: (l) => lines.push(l) }, 'ko', { guard: demoGuard });
     const text = lines.join('\n');
     expect(text).toContain('연습용 합성 데이터');
     expect(text).toContain('relinked: 2');
@@ -154,13 +144,13 @@ describe('demo (AC-10)', () => {
 describe('user data folder resolution', () => {
   const env = { APPDATA: 'C:\\Users\\u\\AppData\\Roaming' };
   it('knows the per-OS and per-product defaults', () => {
-    expect(defaultUserDataDir('code', { platform: 'darwin', home: '/fixture/home', env: {} })).toBe('/fixture/home/Library/Application Support/Code');
-    expect(defaultUserDataDir('cursor', { platform: 'linux', home: '/home/u', env: {} })).toBe('/home/u/.config/Cursor');
-    expect(defaultUserDataDir('insiders', { platform: 'linux', home: '/home/u', env: { XDG_CONFIG_HOME: '/x' } })).toBe('/x/Code - Insiders');
-    expect(defaultUserDataDir('vscodium', { platform: 'win32', home: 'C:\\Users\\u', env })).toBe('C:\\Users\\u\\AppData\\Roaming\\VSCodium');
+    expect(defaultUserDataDir('code', { platform: 'darwin', homedir: '/fixture/home', env: {} })).toBe('/fixture/home/Library/Application Support/Code');
+    expect(defaultUserDataDir('cursor', { platform: 'linux', homedir: '/home/u', env: {} })).toBe('/home/u/.config/Cursor');
+    expect(defaultUserDataDir('insiders', { platform: 'linux', homedir: '/home/u', env: { XDG_CONFIG_HOME: '/x' } })).toBe('/x/Code - Insiders');
+    expect(defaultUserDataDir('vscodium', { platform: 'win32', homedir: 'C:\\Users\\u', env })).toBe('C:\\Users\\u\\AppData\\Roaming\\VSCodium');
   });
   it('explicit option beats the environment variable beats the default', () => {
-    const pe = { platform: 'linux' as const, home: '/home/u', env: { CHAT_RELINK_USER_DATA_DIR: '/env/dir' } };
+    const pe = { platform: 'linux' as const, homedir: '/home/u', env: { CHAT_RELINK_USER_DATA_DIR: '/env/dir' } };
     expect(resolveUserDataDir({ userDataDir: '/flag/dir' }, pe)).toBe('/flag/dir');
     expect(resolveUserDataDir({}, pe)).toBe('/env/dir');
     expect(resolveUserDataDir({}, { ...pe, env: {} })).toBe('/home/u/.config/Code');

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { activate, findOrphans, resolveExtensionLang, runStartupScan } from '../src/extension/extension';
 import { hashTree } from '../src/core/relink';
 import { FIXTURE_SESSION_IDS } from '../src/core/fixture';
@@ -22,14 +22,20 @@ function makeContext(fx: ReturnType<typeof makeFixture>) {
   } as never;
 }
 
-/** The tool home is redirected so the "plan" file never lands in the real home folder. */
+/**
+ * The tool home is redirected so the "plan" file never lands in the real home folder.
+ * vi.stubEnv is undone after every test, so nothing leaks into other tests.
+ */
 function withToolHome(dir: string): void {
-  process.env.CHAT_RELINK_HOME = dir;
+  vi.stubEnv('CHAT_RELINK_HOME', dir);
 }
 
-describe('extension flow with a vscode mock (AC-8)', () => {
+describe('extension flow with a vscode mock (AC-7)', () => {
   beforeEach(() => {
     mock.reset();
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('notifies once with the session count and offers Review / Not now / Never', async () => {
@@ -100,7 +106,6 @@ describe('extension flow with a vscode mock (AC-8)', () => {
       (choices: unknown) => (choices as Array<{ action: string }>).find((c) => c.action === 'relink'),
     ];
     await findOrphans(makeContext(fx));
-    delete process.env.CHAT_RELINK_HOME;
 
     expect(mock.clipboard).toContain('npx chat-relink relink');
     expect(mock.clipboard).toContain(`--from ${fx.oldId}`);

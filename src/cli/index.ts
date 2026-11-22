@@ -22,8 +22,9 @@ import {
   type PathEnv,
 } from '../core/paths';
 import { findSlotByPath, isRelevant, rankCandidates, scanStorage, type Slot } from '../core/scan';
-import { computeFolderId } from '../core/workspaceId';
-import { isLang, resolveLang, translator, type Lang, type MessageKey } from '../i18n/messages';
+import { checkRunning, type GuardDeps } from '../core/runningGuard';
+import { localFolderId } from '../core/workspaceId';
+import { isLang, resolveLang, translator, type MessageKey } from '../i18n/messages';
 import { setCoreLang } from '../core/msg';
 import { runDemo } from './demo';
 
@@ -32,19 +33,8 @@ export interface Io {
   err: (text: string) => void;
 }
 
-const VERSION = '0.1.2';
+const VERSION = '0.1.3';
 
-
-/** Look at `--lang` before full parsing so even usage errors come out in the right language. */
-function peekLang(argv: string[], env: Record<string, string | undefined>): Lang {
-  let flag: Lang | undefined;
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i] as string;
-    const v = a === '--lang' ? argv[i + 1] : a.startsWith('--lang=') ? a.slice(7) : undefined;
-    if (v !== undefined && isLang(v)) flag = v;
-  }
-  return resolveLang({ flag, env });
-}
 
 /** Absolute path with symlinks resolved (macOS /tmp is /private/tmp); plain resolve when it does not exist. */
 function realPath(p: string): string {
@@ -78,11 +68,31 @@ function table(rows: string[][]): string[] {
   return rows.map((r) => r.map((c, i) => (i === r.length - 1 ? c : c.padEnd(widths[i] ?? 0))).join('  '));
 }
 
-export async function run(argv: string[], io: Io, env: Record<string, string | undefined> = process.env): Promise<number> {
-  const lang = peekLang(argv, env);
+/**
+ * What `run()` would otherwise ask the machine. Tests inject fixed values;
+ * the real CLI passes nothing and gets the real calls.
+ */
+export interface RunDeps {
+  /** `code.lock` reader and PID liveness check (VS Code running?). */
+  guard?: GuardDeps;
+  platform?: NodeJS.Platform;
+  homedir?: string;
+}
+
+export async function run(
+  argv: string[],
+  io: Io,
+  env: Record<string, string | undefined> = process.env,
+  deps: RunDeps = {},
+): Promise<number> {
+  // Look at `--lang` before full parsing so even usage errors come out in the right language.
+  const lang = resolveLang({ argv, env });
   const m = translator(lang);
   setCoreLang(lang);
-  const pe: PathEnv = { ...currentPathEnv(), env };
+  const real = currentPathEnv();
+  const pe: PathEnv = { platform: deps.platform ?? real.platform, homedir: deps.homedir ?? real.homedir, env };
+  // every write command asks the same (injectable) question: is VS Code running?
+  const guarded = (dir: string) => checkRunning(dir, deps.guard);
   const json = (value: unknown): void => io.out(JSON.stringify(value, null, 2));
 
   let parsed: ReturnType<typeof parse>;
@@ -244,7 +254,8 @@ export async function run(argv: string[], io: Io, env: Record<string, string | u
         const folder = realPath(values.to);
         let to = findSlotByPath(slots, folder);
         if (!to && fs.existsSync(folder)) {
-          const id = computeFolderId(folder, pe.platform, fs.statSync(folder));
+          // no workspace.json names this folder: compute its id the way VS Code does
+          const id = localFolderId(folder, { platform: pe.platform });
           to = slots.find((s) => s.id === id);
         }
         if (!to) {
@@ -264,7 +275,7 @@ export async function run(argv: string[], io: Io, env: Record<string, string | u
           io.out(m('relink.nothingToCopy'));
           return EXIT.ok;
         }
-        const result = applyRelink(plan, { userDataDir, toolHome: toolHomeDir(pe) });
+        const result = applyRelink(plan, { userDataDir, toolHome: toolHomeDir(pe), checkRunning: guarded });
         if (values.json) {
           json({ mode: 'applied', ...result });
           return EXIT.ok;
@@ -281,7 +292,7 @@ export async function run(argv: string[], io: Io, env: Record<string, string | u
       case 'undo': {
         const journal = positionals[1];
         if (!journal) return usage(m('error.missingArgument', { command: 'undo', what: '<journal>' }));
-        const res = undoRelink(path.resolve(journal));
+        const res = undoRelink(path.resolve(journal), { checkRunning: guarded });
         if (values.json) {
           json(res);
           return EXIT.ok;
@@ -311,7 +322,7 @@ export async function run(argv: string[], io: Io, env: Record<string, string | u
       }
 
       case 'demo': {
-        runDemo({ out: io.out }, lang, { keep: values.keep === true });
+        runDemo({ out: io.out }, lang, { keep: values.keep === true, ...(deps.guard ? { guard: deps.guard } : {}) });
         return EXIT.ok;
       }
 

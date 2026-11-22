@@ -17,8 +17,12 @@ export function tmpDir(prefix = 'chat-relink-test-'): string {
   return dir;
 }
 
+/**
+ * The standard fixture. The id rule is pinned to Linux (inode salt from the fake stats)
+ * so the result is the same on every host; tests that need another rule pass `platform`.
+ */
 export function makeFixture(opts: Partial<FixtureOptions> = {}): Fixture & { toolHome: string } {
   const root = tmpDir();
-  const fx = buildFixture({ root, includeScratch: true, includeSkipped: true, ...opts });
+  const fx = buildFixture({ root, includeScratch: true, includeSkipped: true, platform: 'linux', ...opts });
   return { ...fx, toolHome: path.join(root, 'tool-home') };
 }

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { buildFixture, writeLock } from '../core/fixture';
 import { formatDate, previewFile } from '../core/preview';
 import { applyRelink, planRelink, RelinkError, undoRelink } from '../core/relink';
-import { checkRunning, simulateRunningFlush } from '../core/runningGuard';
+import { checkRunning, simulateRunningFlush, type GuardDeps } from '../core/runningGuard';
 import { findSlotByPath, rankCandidates, scanStorage } from '../core/scan';
 import { openDb, readIndex } from '../core/stateDb';
 import type { Lang } from '../i18n/messages';
@@ -29,10 +29,21 @@ export interface DemoSummary {
  * real files and a real SQLite database; only the data is made up. The lines starting with a
  * key (`orphans:`, `relinked:` ...) are stable English so they can be checked by scripts.
  */
-export function runDemo(io: DemoIo, lang: Lang, opts: { keep?: boolean } = {}): DemoSummary {
+export interface DemoOptions {
+  /** Keep the practice folder instead of deleting it. */
+  keep?: boolean;
+  /**
+   * Running-check inputs. The real demo leaves this empty: step 5 writes its own PID into
+   * code.lock and the real liveness probe sees it alive. Tests inject the answer instead.
+   */
+  guard?: GuardDeps;
+}
+
+export function runDemo(io: DemoIo, lang: Lang, opts: DemoOptions = {}): DemoSummary {
   const m = translator(lang);
   const root = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'chat-relink-demo-'));
   const toolHome = path.join(root, 'tool-home');
+  const guarded = (dir: string) => checkRunning(dir, opts.guard);
   try {
     io.out(m('demo.banner'));
     io.out('');
@@ -74,20 +85,21 @@ export function runDemo(io: DemoIo, lang: Lang, opts: { keep?: boolean } = {}): 
 
     // 5. running guard
     io.out(`[5/8] ${m('demo.step5')}`);
+    // this demo process plays "VS Code": its own PID goes into code.lock
     const lock = writeLock(fx.userDataDir, process.pid);
     let guardExit = 0;
     try {
-      applyRelink(plan, { userDataDir: fx.userDataDir, toolHome });
+      applyRelink(plan, { userDataDir: fx.userDataDir, toolHome, checkRunning: guarded });
     } catch (e) {
       if (e instanceof RelinkError) guardExit = e.code;
     }
     io.out(m('demo.step5.detail'));
-    io.out(`  running guard: ${checkRunning(fx.userDataDir).state}, exit ${guardExit}`);
+    io.out(`  running guard: ${guarded(fx.userDataDir).state}, exit ${guardExit}`);
     fs.rmSync(lock);
 
     // 6. real apply
     io.out(`[6/8] ${m('demo.step6')}`);
-    const result = applyRelink(plan, { userDataDir: fx.userDataDir, toolHome });
+    const result = applyRelink(plan, { userDataDir: fx.userDataDir, toolHome, checkRunning: guarded });
     io.out(`  relinked: ${result.copied.length}`);
     io.out(`  integrity: ${result.integrity}`);
 
@@ -101,7 +113,7 @@ export function runDemo(io: DemoIo, lang: Lang, opts: { keep?: boolean } = {}): 
 
     // 8. undo
     io.out(`[8/8] ${m('demo.step8')}`);
-    const undo = undoRelink(result.journal);
+    const undo = undoRelink(result.journal, { checkRunning: guarded });
     const db = openDb(path.join(to.dir, 'state.vscdb'), { readOnly: true });
     const indexAfter = Object.keys(readIndex(db).entries).length;
     db.close();
