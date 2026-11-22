@@ -78,7 +78,8 @@ describe('undo and automatic rollback (AC-6)', () => {
       expect(readJournal((e as VerifyError).journal).status).toBe('rolled-back');
     }
     expect(snapshot()).toEqual(before);
-    expect(fs.readdirSync(path.join(to.dir, 'chatSessions'))).toEqual(before.files);
+    // sorted: ext4 (CI) lists names in hash order, APFS sorted
+    expect(fs.readdirSync(path.join(to.dir, 'chatSessions')).sort()).toEqual(before.files);
     void treeBefore;
   });
 

@@ -15,8 +15,8 @@ function setup() {
   return { fx, plan: planRelink({ from, to }), to };
 }
 
-/** A PID that is certainly not alive: a child that already exited cannot be reused this fast, so use a huge number. */
-const DEAD_PID = 2 ** 22 - 7;
+/** A PID that is certainly not alive: above Linux's largest pid_max (2^22) and macOS's 99999. */
+const DEAD_PID = 2147483646;
 
 describe('running VS Code protection (AC-5)', () => {
   it('blocks --apply with exit code 3 and writes nothing when the lock holds a live PID', () => {
