@@ -7,7 +7,7 @@ Chat Relink 는 프로젝트 폴더 이름을 바꾸거나 옮기거나 다시 �
 ![연습 데모: 스캔, 미리보기, dry-run, VS Code 실행 중 보호, 재연결, 검증, 되돌리기](docs/images/01-demo.ko.png)
 *`npm start` 는 합성 연습용 데이터로 전체 흐름을 실행합니다. 내 VS Code 데이터는 읽지 않습니다.*
 
-> **솔직한 현재 상태 (v0.1.2).** 테스트 82개는 모두 합성 데이터와 `vscode` API 목(mock)으로 돌렸습니다. 확장은 **실제 VS Code 안에서 실행해 보지 못했고**, CLI 도 macOS 에서만 실행했습니다. 소중한 데이터에 쓰기 전에 [지원 레이아웃과 한계](#지원-레이아웃과-한계)를 읽어 주세요. CLI 는 `--apply` 없이는 아무것도 바꾸지 않고, 바꾸기 전에 항상 백업합니다.
+> **솔직한 현재 상태 (v0.1.3).** 테스트는 모두 합성 데이터와 `vscode` API 목(mock)으로 돌렸습니다. 확장은 **실제 VS Code 안에서 실행해 보지 못했고**, CLI 도 macOS 에서만 실행했습니다. 소중한 데이터에 쓰기 전에 [지원 레이아웃과 한계](#지원-레이아웃과-한계)를 읽어 주세요. CLI 는 `--apply` 없이는 아무것도 바꾸지 않고, 바꾸기 전에 항상 백업합니다.
 
 ## 무엇을 해 주나요
 
@@ -43,8 +43,8 @@ npm run build
 확장을 써 보려면 VSIX 를 만들어 설치합니다(패키징은 했지만 실제 VS Code 에 설치해 보지는 **못했습니다**).
 
 ```bash
-npm run package
-code --install-extension chat-relink-0.1.2.vsix
+npm run package   # 릴리스 단계: npx 로 @vscode/vsce@4.1.1 을 받으므로 네트워크 필요
+code --install-extension chat-relink-0.1.3.vsix
 ```
 
 ## 빠르게 시작하기
@@ -129,7 +129,7 @@ chat-relink relink --from shop-api --to ~/code/shop-api-v2 --apply  # 실제로 
 |---|---|
 | `chat-relink export --from <칸\|경로> --out <폴더>` | 공식 `Chat: Import Chat...` 용으로 세션마다 JSON 하나를 씁니다. 채팅에 붙여 넣은 비밀 값이 들어 있을 수 있으니 채팅 자체처럼 다루세요. |
 | `chat-relink demo [--keep]` | 연습 데모. `--keep` 은 합성 폴더를 남겨 다른 명령을 시험해 볼 수 있게 합니다. |
-| `chat-relink --version` / `--help` | `0.1.2` / 사용법을 출력합니다. |
+| `chat-relink --version` / `--help` | `0.1.3` / 사용법을 출력합니다. |
 
 종료 코드: 0 성공, 1 실패, 2 사용법 오류, 3 VS Code 실행 중, 4 검증 실패(되돌림), 5 대상 칸 없음.
 
@@ -147,7 +147,7 @@ chat-relink relink --from shop-api --to ~/code/shop-api-v2 --apply  # 실제로 
 
 기본 사용자 데이터 폴더: `~/Library/Application Support/Code`(macOS), `%APPDATA%\Code`(Windows), `~/.config/Code`(Linux). `Code - Insiders`·`VSCodium`·`Cursor` 는 `--product` 로 고릅니다. 백업과 저널은 `~/.chat-relink/backups`, `~/.chat-relink/journals` 에 저장됩니다(기준 폴더는 `CHAT_RELINK_HOME` 으로 바꿉니다).
 
-연습 데이터로 다른 명령을 시험하려면 `chat-relink demo --keep` 을 실행하세요. `Kept the practice folder: <dir>` 처럼 폴더를 알려 주면 `--user-data-dir <dir>/userdata` (예: `chat-relink scan --user-data-dir <dir>/userdata`)를 쓰고 `CHAT_RELINK_HOME=<dir>/tool-home` 으로 지정해 실제 홈 폴더에는 아무것도 쓰지 않게 합니다.
+연습 데이터로 다른 명령을 시험하려면 `chat-relink demo --keep` 을 실행하세요. `연습 폴더를 남겼습니다: <dir>` 처럼 폴더를 알려 주면 `--user-data-dir <dir>/userdata` (예: `chat-relink scan --user-data-dir <dir>/userdata`)를 쓰고 `CHAT_RELINK_HOME=<dir>/tool-home` 으로 지정해 실제 홈 폴더에는 아무것도 쓰지 않게 합니다.
 
 ## 채팅이 사라지는 이유
 
@@ -165,6 +165,7 @@ flowchart LR
 1. 칸은 `workspaceStorage/<id>/` 입니다. `workspace.json`(어느 폴더인지), `chatSessions/`(세션마다 `.jsonl` 또는 구형 `.json` 하나), 그리고 공용 `state.vscdb` SQLite 파일 안의 색인(키 `chat.ChatSessionStore.index`)으로 이루어집니다.
 2. 스캐너가 폴더가 없는 칸을 찾고, 세션 로그를 재생해 미리보기를 만들고, 후보 순위를 매깁니다.
 3. 재연결기가 파일을 덮어쓰지 않고 복사하고 색인 항목을 추가합니다. 백업·저널·검증이 함께 따릅니다.
+4. 테스트는 플랫폼·파일 stat·PID 생존·홈 폴더·로케일을 실제 값 대신 주입하므로 어느 OS 에서도 같게 동작합니다.
 
 ## 안전 설계
 
@@ -181,6 +182,7 @@ CLI 와 확장은 영어와 한국어를 지원합니다. CLI: `--lang en|ko`, �
 ## 지원 레이아웃과 한계
 
 - 확장은 `vscode` API 목으로만 테스트했습니다. 실제 VS Code 에서 가져온 사본이 기록에 저장되는지, 제목이 유지되는지는 확인하지 못했습니다.
+- Node 22.13 하한은 CI 가 아니라 로컬에서만 확인했습니다.
 - Windows·Linux 의 workspace id 규칙은 고정값 단위 테스트로만 검증했고 그 OS 에서 실행하지 못했습니다. macOS CLI 실행도 실제 VS Code 프로필이 아니라 합성 데이터였습니다.
 - `code.lock` 에 PID 가 들어 있다는 것은 VS Code 소스를 읽고 안 사실이며 실제 설치본에서 확인한 것이 아닙니다.
 - 원격·멀티 루트·빈 창 칸은 재연결하지 않고 `건너뜀` 으로만 알려 줍니다.
@@ -206,12 +208,13 @@ CLI 와 확장은 영어와 한국어를 지원합니다. CLI: `--lang en|ko`, �
 
 ```bash
 npm ci
-npm test          # 테스트 82개, 약 1초, 오프라인
+npm run typecheck
+npm test          # 약 1초, 오프라인
 npm run build
 npm start         # 빌드 후 연습 데모
 ```
 
-CI 가 같은 단계를 Node 22.13 과 최신 LTS 에서 돌립니다(`.github/workflows/ci.yml`). 변경 기록은 [CHANGELOG.md](CHANGELOG.md).
+CI 는 Ubuntu 24.04 잡 하나, Node 24 에서 `npm ci`, `npm run typecheck`, `npm test` 를 돌립니다(모두 오프라인). engines 하한인 Node 22.13 은 로컬에서만 확인했습니다. 변경 기록은 [CHANGELOG.md](CHANGELOG.md).
 
 ## 라이선스
 

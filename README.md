@@ -7,7 +7,7 @@ Chat Relink finds the VS Code chat sessions that vanished after you renamed, mov
 ![Practice demo: scan, preview, dry run, running-VS-Code guard, relink, verify, undo](docs/images/01-demo.png)
 *`npm start` runs the whole flow on a synthetic practice fixture. Your own VS Code data is not read.*
 
-> **Honest status (v0.1.2).** All tests (82) run against synthetic data and a mocked `vscode` API. The extension has **not** been run inside a real VS Code, and the CLI has only been run on macOS. See [Supported layouts & limits](#supported-layouts--limits) before pointing it at data you care about. The CLI never changes anything without `--apply`, and it backs up first.
+> **Honest status (v0.1.3).** All tests run against synthetic data and a mocked `vscode` API. The extension has **not** been run inside a real VS Code, and the CLI has only been run on macOS. See [Supported layouts & limits](#supported-layouts--limits) before pointing it at data you care about. The CLI never changes anything without `--apply`, and it backs up first.
 
 ## What it does
 
@@ -43,8 +43,8 @@ Below, `chat-relink` means `node dist/cli/index.js`. To get a real `chat-relink`
 To try the extension, build a VSIX and install it (this step was packaged but **not** installed into a real VS Code):
 
 ```bash
-npm run package
-code --install-extension chat-relink-0.1.2.vsix
+npm run package   # release step: downloads @vscode/vsce@4.1.1 with npx, needs network
+code --install-extension chat-relink-0.1.3.vsix
 ```
 
 ## Quick start
@@ -129,7 +129,7 @@ I could not capture screenshots of the extension because no real VS Code was ava
 |---|---|
 | `chat-relink export --from <slot\|path> --out <dir>` | Writes one JSON per session for the official `Chat: Import Chat...`. Exported files can contain secrets that were pasted into chats, so treat them like the chats themselves. |
 | `chat-relink demo [--keep]` | The practice demo. `--keep` leaves the synthetic folder so you can try the other commands on it. |
-| `chat-relink --version` / `--help` | Prints `0.1.2` / the usage. |
+| `chat-relink --version` / `--help` | Prints `0.1.3` / the usage. |
 
 Exit codes: 0 ok, 1 failure, 2 usage, 3 VS Code is running, 4 verification failed (rolled back), 5 target slot not found.
 
@@ -165,6 +165,7 @@ flowchart LR
 1. A slot is `workspaceStorage/<id>/` with a `workspace.json` (which folder), a `chatSessions/` folder (one `.jsonl` or legacy `.json` per session) and an index inside the shared `state.vscdb` SQLite file (key `chat.ChatSessionStore.index`).
 2. The scanner finds slots whose folder does not exist, replays each session log for the preview and ranks candidates.
 3. The relinker copies the files without overwriting and adds the index entries, with a backup, a journal and verification.
+4. Tests inject the platform, file stat, PID liveness, home folder and locale instead of reading the real ones, so they behave the same on any OS.
 
 ## Safety design
 
@@ -181,6 +182,7 @@ The CLI and the extension speak English and Korean. CLI: `--lang en|ko`, then `C
 ## Supported layouts & limits
 
 - The extension was tested only against a mocked `vscode` API. I have not confirmed in a real VS Code that an imported copy is saved to history or keeps its title.
+- The Node 22.13 floor was checked locally only, not in CI.
 - The workspace id rules for Windows and Linux are covered by unit tests with fixed values, not by runs on those systems. The macOS CLI run used the synthetic fixture, not a real VS Code profile.
 - That `code.lock` contains a PID is taken from reading the VS Code source, not from a real installation.
 - Remote, multi-root and empty-window slots are reported as `skipped`, not relinked.
@@ -206,12 +208,13 @@ The CLI and the extension speak English and Korean. CLI: `--lang en|ko`, then `C
 
 ```bash
 npm ci
-npm test          # 82 tests, about a second, offline
+npm run typecheck
+npm test          # about a second, offline
 npm run build
 npm start         # build, then the practice demo
 ```
 
-CI runs the same steps (`.github/workflows/ci.yml`) on Node 22.13 and the current LTS. Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+CI is one Ubuntu 24.04 job on Node 24: `npm ci`, `npm run typecheck`, `npm test` (all offline). Node 22.13, the engines floor, was checked locally only. Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

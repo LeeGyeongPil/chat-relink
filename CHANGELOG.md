@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-11-23
+
+### Changed
+- CI is now a single job: Ubuntu 24.04, Node 24, `npm ci` -> `npm run typecheck` -> `npm test` (no Node matrix, no weekly schedule, no demo step, no npm cache).
+- `@vscode/vsce` is no longer a devDependency. `npm run package` downloads `@vscode/vsce@4.1.1` with `npx` at release time (needs network).
+- devDependencies are pinned to exact versions (`typescript` 7.0.2, `vitest` 5.1.1, `@types/node` 24.19.2, `@types/vscode` 1.146.0); the lock file was updated in place.
+- Environment inputs are injectable and the tests pass fixed values: folder id (`platform`, `stat`), user data paths (`platform`, `env`, `homedir`), running check (`readLock`, `isAlive`), language (`argv`, `env`). The practice fixture builds its ids from fixed fake birthtime/inode values.
+- New script `npm run typecheck` (`tsc --noEmit`).
+
+### Added
+- `test/repoHygiene.test.ts`: offline checks of the CI workflow, lock file sync, install scripts, Linux binaries in the lock and host-dependent patterns in tests.
+
 ## [0.1.2] - 2026-11-23
 
 ### Fixed
