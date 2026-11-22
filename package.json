@@ -2,7 +2,7 @@
   "name": "chat-relink",
   "displayName": "Chat Relink",
   "description": "Find VS Code chat sessions orphaned by a renamed, moved or re-cloned folder, preview them, and relink them safely.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "publisher": "leegyeongpil",
   "type": "commonjs",

@@ -4,17 +4,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.2] - 2026-11-23
+
+### Fixed
+- `run()` (the CLI entry used in-process by tests) no longer replaces the process-wide `warning` listeners; only the real `chat-relink` process hides the `node:sqlite` ExperimentalWarning, now for every command.
+
+### Changed
+- README: documented `CHAT_RELINK_HOME` and how to try commands on `demo --keep` data; test count 82.
 
 ## [0.1.1] - 2026-11-23
 
+### Added
+- Cross-platform tests: the full scan, relink and undo flow with the Linux (inode) and macOS (birthtime) id rules, and with reversed directory listings.
+
 ### Fixed
-- Linux: workspace id and path handling defects found by a new cross-platform test suite.
-- Running-guard and undo tests no longer depend on the host platform.
+- Running-guard and undo tests no longer depend on the host platform (dead PID above Linux `pid_max`, sorted file lists).
 - Preview output is now translated through the English and Korean messages.
 
 ### Changed
-- CI runs on a matrix of operating systems and Node versions.
+- CI runs on Ubuntu with Node 22.13 (the lowest supported version) and the current LTS.
 - README: test count, section titles, refreshed screenshots, note on `npx` before the package is published.
 
 ## [0.1.0] - 2026-11-22
