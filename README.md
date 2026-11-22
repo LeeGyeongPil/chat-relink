@@ -7,7 +7,7 @@ Chat Relink finds the VS Code chat sessions that vanished after you renamed, mov
 ![Practice demo: scan, preview, dry run, running-VS-Code guard, relink, verify, undo](docs/images/01-demo.png)
 *`npm start` runs the whole flow on a synthetic practice fixture. Your own VS Code data is not read.*
 
-> **Honest status (v0.1.1).** All tests (81) run against synthetic data and a mocked `vscode` API. The extension has **not** been run inside a real VS Code, and the CLI has only been run on macOS. See [Supported layouts & limits](#supported-layouts--limits) before pointing it at data you care about. The CLI never changes anything without `--apply`, and it backs up first.
+> **Honest status (v0.1.2).** All tests (82) run against synthetic data and a mocked `vscode` API. The extension has **not** been run inside a real VS Code, and the CLI has only been run on macOS. See [Supported layouts & limits](#supported-layouts--limits) before pointing it at data you care about. The CLI never changes anything without `--apply`, and it backs up first.
 
 ## What it does
 
@@ -44,7 +44,7 @@ To try the extension, build a VSIX and install it (this step was packaged but **
 
 ```bash
 npm run package
-code --install-extension chat-relink-0.1.1.vsix
+code --install-extension chat-relink-0.1.2.vsix
 ```
 
 ## Quick start
@@ -129,7 +129,7 @@ I could not capture screenshots of the extension because no real VS Code was ava
 |---|---|
 | `chat-relink export --from <slot\|path> --out <dir>` | Writes one JSON per session for the official `Chat: Import Chat...`. Exported files can contain secrets that were pasted into chats, so treat them like the chats themselves. |
 | `chat-relink demo [--keep]` | The practice demo. `--keep` leaves the synthetic folder so you can try the other commands on it. |
-| `chat-relink --version` / `--help` | Prints `0.1.1` / the usage. |
+| `chat-relink --version` / `--help` | Prints `0.1.2` / the usage. |
 
 Exit codes: 0 ok, 1 failure, 2 usage, 3 VS Code is running, 4 verification failed (rolled back), 5 target slot not found.
 
@@ -143,8 +143,11 @@ Common options: `--user-data-dir <dir>`, `--product code|insiders|vscodium|curso
 | `chatRelink.scanOnStartup` | `true` | Look for orphaned chats when a folder is opened |
 | `CHAT_RELINK_LANG` (env) | unset | CLI language `en` or `ko`. Priority: `--lang` > `CHAT_RELINK_LANG` > `LC_ALL`/`LC_MESSAGES`/`LANG` (starts with `ko` gives Korean) > English |
 | `CHAT_RELINK_USER_DATA_DIR` (env) | unset | User data folder when `--user-data-dir` is not given |
+| `CHAT_RELINK_HOME` (env) | `~/.chat-relink` | Where backups, journals and plans are written |
 
-Default user data folders: `~/Library/Application Support/Code` (macOS), `%APPDATA%\Code` (Windows), `~/.config/Code` (Linux); `Code - Insiders`, `VSCodium` and `Cursor` via `--product`. Backups and journals go to `~/.chat-relink/backups` and `~/.chat-relink/journals`.
+Default user data folders: `~/Library/Application Support/Code` (macOS), `%APPDATA%\Code` (Windows), `~/.config/Code` (Linux); `Code - Insiders`, `VSCodium` and `Cursor` via `--product`. Backups and journals go to `~/.chat-relink/backups` and `~/.chat-relink/journals` (change the base folder with `CHAT_RELINK_HOME`).
+
+To try the other commands on the practice data, run `chat-relink demo --keep`. It prints `Kept the practice folder: <dir>`; then use `--user-data-dir <dir>/userdata` (for example `chat-relink scan --user-data-dir <dir>/userdata`) and set `CHAT_RELINK_HOME=<dir>/tool-home` so nothing is written to your real home folder.
 
 ## Why chats disappear
 
@@ -203,7 +206,7 @@ The CLI and the extension speak English and Korean. CLI: `--lang en|ko`, then `C
 
 ```bash
 npm ci
-npm test          # 81 tests, about a second, offline
+npm test          # 82 tests, about a second, offline
 npm run build
 npm start         # build, then the practice demo
 ```

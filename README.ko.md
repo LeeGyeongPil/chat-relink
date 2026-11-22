@@ -7,7 +7,7 @@ Chat Relink 는 프로젝트 폴더 이름을 바꾸거나 옮기거나 다시 �
 ![연습 데모: 스캔, 미리보기, dry-run, VS Code 실행 중 보호, 재연결, 검증, 되돌리기](docs/images/01-demo.ko.png)
 *`npm start` 는 합성 연습용 데이터로 전체 흐름을 실행합니다. 내 VS Code 데이터는 읽지 않습니다.*
 
-> **솔직한 현재 상태 (v0.1.1).** 테스트 81개는 모두 합성 데이터와 `vscode` API 목(mock)으로 돌렸습니다. 확장은 **실제 VS Code 안에서 실행해 보지 못했고**, CLI 도 macOS 에서만 실행했습니다. 소중한 데이터에 쓰기 전에 [지원 레이아웃과 한계](#지원-레이아웃과-한계)를 읽어 주세요. CLI 는 `--apply` 없이는 아무것도 바꾸지 않고, 바꾸기 전에 항상 백업합니다.
+> **솔직한 현재 상태 (v0.1.2).** 테스트 82개는 모두 합성 데이터와 `vscode` API 목(mock)으로 돌렸습니다. 확장은 **실제 VS Code 안에서 실행해 보지 못했고**, CLI 도 macOS 에서만 실행했습니다. 소중한 데이터에 쓰기 전에 [지원 레이아웃과 한계](#지원-레이아웃과-한계)를 읽어 주세요. CLI 는 `--apply` 없이는 아무것도 바꾸지 않고, 바꾸기 전에 항상 백업합니다.
 
 ## 무엇을 해 주나요
 
@@ -44,7 +44,7 @@ npm run build
 
 ```bash
 npm run package
-code --install-extension chat-relink-0.1.1.vsix
+code --install-extension chat-relink-0.1.2.vsix
 ```
 
 ## 빠르게 시작하기
@@ -129,7 +129,7 @@ chat-relink relink --from shop-api --to ~/code/shop-api-v2 --apply  # 실제로 
 |---|---|
 | `chat-relink export --from <칸\|경로> --out <폴더>` | 공식 `Chat: Import Chat...` 용으로 세션마다 JSON 하나를 씁니다. 채팅에 붙여 넣은 비밀 값이 들어 있을 수 있으니 채팅 자체처럼 다루세요. |
 | `chat-relink demo [--keep]` | 연습 데모. `--keep` 은 합성 폴더를 남겨 다른 명령을 시험해 볼 수 있게 합니다. |
-| `chat-relink --version` / `--help` | `0.1.1` / 사용법을 출력합니다. |
+| `chat-relink --version` / `--help` | `0.1.2` / 사용법을 출력합니다. |
 
 종료 코드: 0 성공, 1 실패, 2 사용법 오류, 3 VS Code 실행 중, 4 검증 실패(되돌림), 5 대상 칸 없음.
 
@@ -143,8 +143,11 @@ chat-relink relink --from shop-api --to ~/code/shop-api-v2 --apply  # 실제로 
 | `chatRelink.scanOnStartup` | `true` | 폴더를 열 때 고아 채팅을 찾습니다 |
 | `CHAT_RELINK_LANG` (환경 변수) | 없음 | CLI 언어 `en` 또는 `ko`. 우선순위: `--lang` > `CHAT_RELINK_LANG` > `LC_ALL`/`LC_MESSAGES`/`LANG`(`ko` 로 시작하면 한국어) > 영어 |
 | `CHAT_RELINK_USER_DATA_DIR` (환경 변수) | 없음 | `--user-data-dir` 을 안 줬을 때 쓸 사용자 데이터 폴더 |
+| `CHAT_RELINK_HOME` (환경 변수) | `~/.chat-relink` | 백업·저널·계획 파일을 쓰는 폴더 |
 
-기본 사용자 데이터 폴더: `~/Library/Application Support/Code`(macOS), `%APPDATA%\Code`(Windows), `~/.config/Code`(Linux). `Code - Insiders`·`VSCodium`·`Cursor` 는 `--product` 로 고릅니다. 백업과 저널은 `~/.chat-relink/backups`, `~/.chat-relink/journals` 에 저장됩니다.
+기본 사용자 데이터 폴더: `~/Library/Application Support/Code`(macOS), `%APPDATA%\Code`(Windows), `~/.config/Code`(Linux). `Code - Insiders`·`VSCodium`·`Cursor` 는 `--product` 로 고릅니다. 백업과 저널은 `~/.chat-relink/backups`, `~/.chat-relink/journals` 에 저장됩니다(기준 폴더는 `CHAT_RELINK_HOME` 으로 바꿉니다).
+
+연습 데이터로 다른 명령을 시험하려면 `chat-relink demo --keep` 을 실행하세요. `Kept the practice folder: <dir>` 처럼 폴더를 알려 주면 `--user-data-dir <dir>/userdata` (예: `chat-relink scan --user-data-dir <dir>/userdata`)를 쓰고 `CHAT_RELINK_HOME=<dir>/tool-home` 으로 지정해 실제 홈 폴더에는 아무것도 쓰지 않게 합니다.
 
 ## 채팅이 사라지는 이유
 
@@ -203,7 +206,7 @@ CLI 와 확장은 영어와 한국어를 지원합니다. CLI: `--lang en|ko`, �
 
 ```bash
 npm ci
-npm test          # 테스트 81개, 약 1초, 오프라인
+npm test          # 테스트 82개, 약 1초, 오프라인
 npm run build
 npm start         # 빌드 후 연습 데모
 ```
