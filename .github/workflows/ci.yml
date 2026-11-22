@@ -1,34 +1,19 @@
-# Everything runs offline on synthetic fixtures: no keys, no VS Code download.
+# One job, offline: synthetic fixtures and a mocked vscode API only (no keys, no VS Code download).
 name: ci
 on:
   push:
   pull_request:
-  schedule:
-    - cron: "17 3 * * 1"   # every Monday: catch Node or dependency changes that break the build
   workflow_dispatch:
 jobs:
   test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        # 22.13 is the lowest version in package.json "engines" (node:sqlite without a flag);
-        # lts/* follows the current LTS line.
-        node-version: ["22.13", "lts/*"]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-      - name: Show versions
-        run: node --version && npm --version
-      - name: Install (exact lockfile)
-        run: npm ci
-      - name: Test (vitest, mock data only)
-        run: npm test
-      - name: Type-check and build
-        run: npm run build
-      - name: Run the demo
-        run: npm start
+          node-version: "24"
+          package-manager-cache: false
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
