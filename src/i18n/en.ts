@@ -136,6 +136,8 @@ Exit codes: 0 ok, 1 failure, 2 usage, 3 VS Code is running, 4 verification faile
   'core.indexOverLimit': 'The index would hold {after} entries; VS Code keeps about {limit}, so the oldest chats may drop out of the history list (their files stay on disk).',
   'core.journalMissing': 'Journal is missing or damaged: {file}',
   'core.journalShape': 'Journal is damaged (unexpected shape): {file}',
+  'core.untitled': '(untitled)',
+  'core.unreadable': '(unreadable)',
   'core.running': 'VS Code is running (PID {pid}, {lockFile}). Quit it completely, then run this command again. Nothing was written.',
   'core.runningUndo': 'VS Code is running (PID {pid}). Quit it completely, then run undo again.',
   'core.staleLock': 'Found a leftover {lockFile} from a VS Code that is no longer running; continuing.',

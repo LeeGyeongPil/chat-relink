@@ -138,6 +138,8 @@ export const ko: Record<MessageKey, string> = {
   'core.indexOverLimit': '색인이 {after}개 항목을 담게 됩니다. VS Code 는 약 {limit}개만 유지하므로 가장 오래된 채팅이 기록 목록에서 빠질 수 있습니다(파일은 디스크에 남습니다).',
   'core.journalMissing': '저널이 없거나 손상되었습니다: {file}',
   'core.journalShape': '저널이 손상되었습니다(예상과 다른 형식): {file}',
+  'core.untitled': '(제목 없음)',
+  'core.unreadable': '(읽을 수 없음)',
   'core.running': 'VS Code 가 실행 중입니다(PID {pid}, {lockFile}). 완전히 종료한 뒤 이 명령을 다시 실행하세요. 아무것도 쓰지 않았습니다.',
   'core.runningUndo': 'VS Code 가 실행 중입니다(PID {pid}). 완전히 종료한 뒤 undo 를 다시 실행하세요.',
   'core.staleLock': '더 이상 실행 중이 아닌 VS Code 가 남긴 {lockFile} 을(를) 찾았습니다. 계속 진행합니다.',

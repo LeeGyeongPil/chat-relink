@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { cm } from './msg';
 import { readSessionFile, type SessionFormat, type SessionState } from './sessionLog';
 
 export interface SessionPreview {
@@ -22,7 +23,7 @@ export function titleOf(state: SessionState): string {
     const flat = first.trim().replace(/\s+/g, ' ');
     return flat.length > TITLE_MAX ? `${flat.slice(0, TITLE_MAX - 1)}…` : flat;
   }
-  return '(untitled)';
+  return cm('core.untitled');
 }
 
 export function lastDateOf(state: SessionState): number | undefined {
@@ -46,7 +47,7 @@ export function previewFile(file: string): SessionPreview {
   } catch (e) {
     return {
       sessionId,
-      title: '(unreadable)',
+      title: cm('core.unreadable'),
       turns: 0,
       lastDate: undefined,
       format: file.endsWith('.jsonl') ? 'jsonl' : 'json',
