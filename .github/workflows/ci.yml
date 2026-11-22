@@ -9,13 +9,26 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # 22.13 is the lowest version in package.json "engines" (node:sqlite without a flag);
+        # lts/* follows the current LTS line.
+        node-version: ["22.13", "lts/*"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: lts/*
+          node-version: ${{ matrix.node-version }}
           cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
-      - run: npm start
+      - name: Show versions
+        run: node --version && npm --version
+      - name: Install (exact lockfile)
+        run: npm ci
+      - name: Test (vitest, mock data only)
+        run: npm test
+      - name: Type-check and build
+        run: npm run build
+      - name: Run the demo
+        run: npm start
