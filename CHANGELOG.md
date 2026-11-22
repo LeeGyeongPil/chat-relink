@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-23
+
+### Fixed
+- Linux: workspace id and path handling defects found by a new cross-platform test suite.
+- Running-guard and undo tests no longer depend on the host platform.
+- Preview output is now translated through the English and Korean messages.
+
+### Changed
+- CI runs on a matrix of operating systems and Node versions.
+- README: test count, section titles, refreshed screenshots, note on `npx` before the package is published.
+
 ## [0.1.0] - 2026-11-22
 
 ### Added

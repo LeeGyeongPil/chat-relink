@@ -32,7 +32,7 @@ export interface Io {
   err: (text: string) => void;
 }
 
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 
 
 /** Look at `--lang` before full parsing so even usage errors come out in the right language. */
