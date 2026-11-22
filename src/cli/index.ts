@@ -32,7 +32,7 @@ export interface Io {
   err: (text: string) => void;
 }
 
-const VERSION = '0.1.1';
+const VERSION = '0.1.2';
 
 
 /** Look at `--lang` before full parsing so even usage errors come out in the right language. */
@@ -161,13 +161,6 @@ export async function run(argv: string[], io: Io, env: Record<string, string | u
     }
     return undefined;
   };
-  const sqliteQuiet = (): void => {
-    // node:sqlite may print an ExperimentalWarning on some Node versions; keep other warnings.
-    process.removeAllListeners('warning');
-    process.on('warning', (w) => {
-      if (!/sqlite/i.test(w.message)) process.stderr.write(`${w.name}: ${w.message}\n`);
-    });
-  };
 
   try {
     switch (command) {
@@ -245,7 +238,6 @@ export async function run(argv: string[], io: Io, env: Record<string, string | u
         if (!values.from) return usage(m('error.missingOption', { name: 'from' }));
         if (!values.to) return usage(m('error.missingOption', { name: 'to' }));
         if (!needStorage()) return EXIT.failure;
-        sqliteQuiet();
         const slots = scanStorage(storageDir);
         const from = lookup(slots, values.from);
         if (!from) return EXIT.usage;
@@ -289,7 +281,6 @@ export async function run(argv: string[], io: Io, env: Record<string, string | u
       case 'undo': {
         const journal = positionals[1];
         if (!journal) return usage(m('error.missingArgument', { command: 'undo', what: '<journal>' }));
-        sqliteQuiet();
         const res = undoRelink(path.resolve(journal));
         if (values.json) {
           json(res);
@@ -320,7 +311,6 @@ export async function run(argv: string[], io: Io, env: Record<string, string | u
       }
 
       case 'demo': {
-        sqliteQuiet();
         runDemo({ out: io.out }, lang, { keep: values.keep === true });
         return EXIT.ok;
       }
@@ -364,7 +354,21 @@ function printPlan(io: Io, m: ReturnType<typeof translator>, plan: RelinkPlan, f
 }
 
 
+/**
+ * node:sqlite prints an ExperimentalWarning on some Node versions (22.13 does); hide only that one.
+ * This changes process-wide listeners, so only the real `chat-relink` process calls it
+ * (never `run()`, which tests and other callers use inside their own process).
+ */
+function quietSqliteWarnings(): void {
+  process.removeAllListeners('warning');
+  process.on('warning', (w) => {
+    // every other warning is still shown
+    if (!/sqlite/i.test(w.message)) process.stderr.write(`${w.name}: ${w.message}\n`);
+  });
+}
+
 if (require.main === module) {
+  quietSqliteWarnings();
   // `chat-relink scan | head` closes the pipe early; that is not an error.
   process.stdout.on('error', (e: NodeJS.ErrnoException) => {
     if (e.code !== 'EPIPE') throw e;

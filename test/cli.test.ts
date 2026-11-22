@@ -104,6 +104,18 @@ describe('CLI commands and exit codes', () => {
     expect(scan.candidates[0].id).toBe(fx.oldId);
   });
 
+  it('run() leaves the process warning listeners alone (only the real CLI process filters them)', async () => {
+    const fx = makeFixture();
+    const env = { CHAT_RELINK_HOME: fx.toolHome, CHAT_RELINK_LANG: 'en' };
+    const before = process.listeners('warning');
+    const applied = await cli(['relink', '--from', 'shop-api', '--to', fx.currentFolder, '--apply', '--user-data-dir', fx.userDataDir], env);
+    expect(applied.code).toBe(0);
+    const journal = /Journal:\s+(.+)/.exec(applied.out)![1]!;
+    expect((await cli(['undo', journal], env)).code).toBe(0);
+    expect((await cli(['demo'], env)).code).toBe(0);
+    expect(process.listeners('warning')).toEqual(before);
+  });
+
   it('--version prints the package version', async () => {
     const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'));
     expect((await cli(['--version'], {})).out).toBe(pkg.version);
