@@ -7,7 +7,7 @@ Chat Relink finds the VS Code chat sessions that vanished after you renamed, mov
 ![Practice demo: scan, preview, dry run, running-VS-Code guard, relink, verify, undo](docs/images/01-demo.png)
 *`npm start` runs the whole flow on a synthetic practice fixture. Your own VS Code data is not read.*
 
-> **Honest status (v0.1.0).** All tests (78) run against synthetic data and a mocked `vscode` API. The extension has **not** been run inside a real VS Code, and the CLI has only been run on macOS. See [Known limitations](#known-limitations) before pointing it at data you care about. The CLI never changes anything without `--apply`, and it backs up first.
+> **Honest status (v0.1.1).** All tests (81) run against synthetic data and a mocked `vscode` API. The extension has **not** been run inside a real VS Code, and the CLI has only been run on macOS. See [Supported layouts & limits](#supported-layouts--limits) before pointing it at data you care about. The CLI never changes anything without `--apply`, and it backs up first.
 
 ## What it does
 
@@ -44,7 +44,7 @@ To try the extension, build a VSIX and install it (this step was packaged but **
 
 ```bash
 npm run package
-code --install-extension chat-relink-0.1.0.vsix
+code --install-extension chat-relink-0.1.1.vsix
 ```
 
 ## Quick start
@@ -119,7 +119,7 @@ On startup the extension scans `workspaceStorage` in the background. If the fold
 
 - Pick sessions in the QuickPick (title, turns, last date) and they open one by one through `workbench.action.chat.import`. These are **imported copies**: VS Code's import drops the original session id and dates, so a copy may get a new id and date.
 - **Relink permanently...** writes a plan file and copies the CLI command to your clipboard. Quit VS Code completely and paste it into a terminal. Only that path keeps the original session id, title and date.
-- The copied command starts with `npx chat-relink relink ...`, so `npx` downloads the published `chat-relink` package from npm once (one network request, and the published version, not your clone). If you built from a clone, paste it with `node dist/cli/index.js` in place of `npx chat-relink`.
+- The copied command starts with `npx chat-relink relink ...`, so `npx` downloads the published `chat-relink` package from npm once (one network request, and the published version, not your clone). If you built from a clone, paste it with `node dist/cli/index.js` in place of `npx chat-relink`. If the package is not on npm yet, `npx` fails with a 404; use the `node dist/cli/index.js` form.
 
 I could not capture screenshots of the extension because no real VS Code was available in my environment, so there are none here.
 
@@ -129,7 +129,7 @@ I could not capture screenshots of the extension because no real VS Code was ava
 |---|---|
 | `chat-relink export --from <slot\|path> --out <dir>` | Writes one JSON per session for the official `Chat: Import Chat...`. Exported files can contain secrets that were pasted into chats, so treat them like the chats themselves. |
 | `chat-relink demo [--keep]` | The practice demo. `--keep` leaves the synthetic folder so you can try the other commands on it. |
-| `chat-relink --version` / `--help` | Prints `0.1.0` / the usage. |
+| `chat-relink --version` / `--help` | Prints `0.1.1` / the usage. |
 
 Exit codes: 0 ok, 1 failure, 2 usage, 3 VS Code is running, 4 verification failed (rolled back), 5 target slot not found.
 
@@ -175,7 +175,7 @@ Before anything is written, the CLI makes a backup of the state database and a j
 
 The CLI and the extension speak English and Korean. CLI: `--lang en|ko`, then `CHAT_RELINK_LANG`, then `LC_ALL`/`LC_MESSAGES`/`LANG`; anything not Korean gives English. Extension: the `chatRelink.language` setting (`auto` follows the VS Code display language).
 
-## Known limitations
+## Supported layouts & limits
 
 - The extension was tested only against a mocked `vscode` API. I have not confirmed in a real VS Code that an imported copy is saved to history or keeps its title.
 - The workspace id rules for Windows and Linux are covered by unit tests with fixed values, not by runs on those systems. The macOS CLI run used the synthetic fixture, not a real VS Code profile.
@@ -203,12 +203,12 @@ The CLI and the extension speak English and Korean. CLI: `--lang en|ko`, then `C
 
 ```bash
 npm ci
-npm test          # 78 tests, about a second, offline
+npm test          # 81 tests, about a second, offline
 npm run build
 npm start         # build, then the practice demo
 ```
 
-CI runs the same steps (`.github/workflows/ci.yml`). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+CI runs the same steps (`.github/workflows/ci.yml`) on Node 22.13 and the current LTS. Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

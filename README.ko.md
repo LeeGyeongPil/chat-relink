@@ -7,7 +7,7 @@ Chat Relink 는 프로젝트 폴더 이름을 바꾸거나 옮기거나 다시 �
 ![연습 데모: 스캔, 미리보기, dry-run, VS Code 실행 중 보호, 재연결, 검증, 되돌리기](docs/images/01-demo.ko.png)
 *`npm start` 는 합성 연습용 데이터로 전체 흐름을 실행합니다. 내 VS Code 데이터는 읽지 않습니다.*
 
-> **솔직한 현재 상태 (v0.1.0).** 테스트 78개는 모두 합성 데이터와 `vscode` API 목(mock)으로 돌렸습니다. 확장은 **실제 VS Code 안에서 실행해 보지 못했고**, CLI 도 macOS 에서만 실행했습니다. 소중한 데이터에 쓰기 전에 [알려진 한계](#알려진-한계)를 읽어 주세요. CLI 는 `--apply` 없이는 아무것도 바꾸지 않고, 바꾸기 전에 항상 백업합니다.
+> **솔직한 현재 상태 (v0.1.1).** 테스트 81개는 모두 합성 데이터와 `vscode` API 목(mock)으로 돌렸습니다. 확장은 **실제 VS Code 안에서 실행해 보지 못했고**, CLI 도 macOS 에서만 실행했습니다. 소중한 데이터에 쓰기 전에 [지원 레이아웃과 한계](#지원-레이아웃과-한계)를 읽어 주세요. CLI 는 `--apply` 없이는 아무것도 바꾸지 않고, 바꾸기 전에 항상 백업합니다.
 
 ## 무엇을 해 주나요
 
@@ -44,7 +44,7 @@ npm run build
 
 ```bash
 npm run package
-code --install-extension chat-relink-0.1.0.vsix
+code --install-extension chat-relink-0.1.1.vsix
 ```
 
 ## 빠르게 시작하기
@@ -119,7 +119,7 @@ chat-relink relink --from shop-api --to ~/code/shop-api-v2 --apply  # 실제로 
 
 - QuickPick 에서 세션(제목·턴 수·마지막 날짜)을 고르면 `workbench.action.chat.import` 로 하나씩 열립니다. 이것은 **가져온 사본**입니다. VS Code 의 import 는 원래 세션 id 와 날짜를 버리므로 사본은 새 id·날짜를 받을 수 있습니다.
 - **Relink permanently...** 는 계획 파일을 쓰고 CLI 명령을 클립보드에 복사합니다. VS Code 를 완전히 종료한 뒤 터미널에 붙여 넣으세요. 원래 세션 id·제목·날짜가 유지되는 것은 이 경로뿐입니다.
-- 복사된 명령은 `npx chat-relink relink ...` 로 시작하므로 `npx` 가 npm 에 게시된 `chat-relink` 패키지를 한 번 내려받아 실행합니다(네트워크 요청 1회, 클론한 코드가 아니라 게시된 버전). 클론해서 빌드했다면 `npx chat-relink` 대신 `node dist/cli/index.js` 로 바꿔 붙여 넣으세요.
+- 복사된 명령은 `npx chat-relink relink ...` 로 시작하므로 `npx` 가 npm 에 게시된 `chat-relink` 패키지를 한 번 내려받아 실행합니다(네트워크 요청 1회, 클론한 코드가 아니라 게시된 버전). 클론해서 빌드했다면 `npx chat-relink` 대신 `node dist/cli/index.js` 로 바꿔 붙여 넣으세요. 패키지가 아직 npm 에 없으면 `npx` 가 404 로 실패하니 `node dist/cli/index.js` 형태를 쓰세요.
 
 실제 VS Code 가 없는 환경이라 확장 스크린샷은 찍지 못했습니다. 그래서 여기에는 없습니다.
 
@@ -129,7 +129,7 @@ chat-relink relink --from shop-api --to ~/code/shop-api-v2 --apply  # 실제로 
 |---|---|
 | `chat-relink export --from <칸\|경로> --out <폴더>` | 공식 `Chat: Import Chat...` 용으로 세션마다 JSON 하나를 씁니다. 채팅에 붙여 넣은 비밀 값이 들어 있을 수 있으니 채팅 자체처럼 다루세요. |
 | `chat-relink demo [--keep]` | 연습 데모. `--keep` 은 합성 폴더를 남겨 다른 명령을 시험해 볼 수 있게 합니다. |
-| `chat-relink --version` / `--help` | `0.1.0` / 사용법을 출력합니다. |
+| `chat-relink --version` / `--help` | `0.1.1` / 사용법을 출력합니다. |
 
 종료 코드: 0 성공, 1 실패, 2 사용법 오류, 3 VS Code 실행 중, 4 검증 실패(되돌림), 5 대상 칸 없음.
 
@@ -175,7 +175,7 @@ flowchart LR
 
 CLI 와 확장은 영어와 한국어를 지원합니다. CLI: `--lang en|ko`, 그다음 `CHAT_RELINK_LANG`, 그다음 `LC_ALL`/`LC_MESSAGES`/`LANG` 순이며 한국어가 아니면 영어입니다. 확장: `chatRelink.language` 설정(`auto` 는 VS Code 표시 언어를 따름).
 
-## 알려진 한계
+## 지원 레이아웃과 한계
 
 - 확장은 `vscode` API 목으로만 테스트했습니다. 실제 VS Code 에서 가져온 사본이 기록에 저장되는지, 제목이 유지되는지는 확인하지 못했습니다.
 - Windows·Linux 의 workspace id 규칙은 고정값 단위 테스트로만 검증했고 그 OS 에서 실행하지 못했습니다. macOS CLI 실행도 실제 VS Code 프로필이 아니라 합성 데이터였습니다.
@@ -203,12 +203,12 @@ CLI 와 확장은 영어와 한국어를 지원합니다. CLI: `--lang en|ko`, �
 
 ```bash
 npm ci
-npm test          # 테스트 78개, 약 1초, 오프라인
+npm test          # 테스트 81개, 약 1초, 오프라인
 npm run build
 npm start         # 빌드 후 연습 데모
 ```
 
-CI 가 같은 단계를 돌립니다(`.github/workflows/ci.yml`). 변경 기록은 [CHANGELOG.md](CHANGELOG.md).
+CI 가 같은 단계를 Node 22.13 과 최신 LTS 에서 돌립니다(`.github/workflows/ci.yml`). 변경 기록은 [CHANGELOG.md](CHANGELOG.md).
 
 ## 라이선스
 
