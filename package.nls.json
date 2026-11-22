@@ -1,0 +1,5 @@
+{
+  "command.findOrphans.title": "Find Orphaned Chats",
+  "config.language.description": "Language of Chat Relink messages. \"auto\" follows the VS Code display language.",
+  "config.scanOnStartup.description": "Look for chats left behind by a renamed or moved folder when a folder is opened."
+}

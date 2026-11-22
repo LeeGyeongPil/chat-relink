@@ -1,0 +1,86 @@
+{
+  "name": "chat-relink",
+  "displayName": "Chat Relink",
+  "description": "Find VS Code chat sessions orphaned by a renamed, moved or re-cloned folder, preview them, and relink them safely.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "publisher": "leegyeongpil",
+  "type": "commonjs",
+  "main": "./dist/extension/extension.js",
+  "bin": {
+    "chat-relink": "dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "package.nls.json",
+    "package.nls.ko.json",
+    "README.md",
+    "README.ko.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.13",
+    "vscode": "^1.146.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "vscode",
+    "chat",
+    "copilot",
+    "workspaceStorage",
+    "relink",
+    "migrate"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LeeGyeongPil/chat-relink.git"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "chatRelink.findOrphans",
+        "title": "%command.findOrphans.title%",
+        "category": "Chat Relink"
+      }
+    ],
+    "configuration": {
+      "title": "Chat Relink",
+      "properties": {
+        "chatRelink.language": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "en",
+            "ko"
+          ],
+          "default": "auto",
+          "description": "%config.language.description%"
+        },
+        "chatRelink.scanOnStartup": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.scanOnStartup.description%"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "start": "npm run build && node dist/cli/index.js demo",
+    "package": "npm run build && vsce package --no-dependencies --allow-unused-files-pattern"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/vscode": "^1.146.0",
+    "@vscode/vsce": "^4.1.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}
